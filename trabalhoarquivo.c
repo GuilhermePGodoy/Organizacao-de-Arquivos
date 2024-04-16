@@ -234,7 +234,8 @@ void funcao1(char* texto, char* bin)
         }
         //Fim da função 'le_nomeClube'.
         if(reg.tamNomeClube > 0)//Se tamNomeClube == 0, o ponteiro já está na posição correta (no primeiro byte do próximo registro).
-        fseek(incsv, 1, SEEK_CUR); //Pula a quebra de linha após o nome do clube do jogador.
+            fseek(incsv, 1, SEEK_CUR); //Pula a quebra de linha após o nome do clube do jogador.
+
         controle = getc(incsv); //Tenta ler o próximo caractere com 'getc.'. Se não houver, 'getc' retorna  EOF, indicando que o arquivo acabou.
         fseek(incsv, -1, SEEK_CUR);
 
@@ -244,8 +245,6 @@ void funcao1(char* texto, char* bin)
         //Próximo byte offset livre é logo após o último registro gravado.
         cab.proxByteOffset += reg.tamanhoRegistro;
 
-        //Função para testes.
-        //print_struct(reg);
 
         //Escrita dos dados um por um no arquivo de saída.
         fwrite(reg.removido, 1, 1, outbin);
@@ -285,8 +284,80 @@ void funcao1(char* texto, char* bin)
     fclose(outbin);
 
 }
-void funcao2(){
+void funcao2(char *filename){
+    FILE *f = fopen(filename, "rb");
+    if(f == NULL){
+        printf("Falha no processamento do arquivo.");
+        return;
+    }
+    
+    int nroRegArq = 0;
+    fseek(f, 17, SEEK_CUR); //Pula para o campo 'nroRegArq' do registro de cabeçalho.
+    fread(&nroRegArq, 4, 1, f);
+    if(nroRegArq == 0){
+        printf("Registro inexistente.\n\n");
+        return;
+    }
 
+    fseek(f, 4, SEEK_CUR); //Pula o campo 'nroRegRem' do registro de cabeçalho.
+
+    struct registro reg;
+    char controle = 'a';
+
+    while(controle != EOF){
+        fread(reg.removido, 1, 1, f);
+
+        if((reg.removido)[0] != '1'){ //Se o registro não estiver removido, será lido.
+            fseek(f, 20, SEEK_CUR); //Pula os campos 'tamanhoRegistro', 'prox', 'id' e 'idade', que não serão exibidos.
+
+            fread(&reg.tamNomeJogador, 4, 1, f);
+            reg.nomeJogador = (char *) malloc(sizeof(char)*reg.tamNomeJogador + 1);
+            fread(reg.nomeJogador, reg.tamNomeJogador, 1, f);
+            reg.nomeJogador[reg.tamNomeJogador] = '\0';
+
+            fread(&reg.tamNacionalidade, 4, 1, f);
+            reg.Nacionalidade = (char *) malloc(sizeof(char)*reg.tamNacionalidade + 1);
+            fread(reg.Nacionalidade, reg.tamNacionalidade, 1, f);
+            reg.Nacionalidade[reg.tamNacionalidade] = '\0';
+
+            fread(&reg.tamNomeClube, 4, 1, f);
+            reg.nomeClube = (char *) malloc(sizeof(char)*reg.tamNomeClube + 1);
+            fread(reg.nomeClube, reg.tamNomeClube, 1, f);
+            reg.nomeClube[reg.tamNomeClube] = '\0';
+
+
+            printf("Nome do Jogador: ");
+            if(reg.tamNomeJogador == 0)
+                printf("SEM DADO\n");
+            else{
+                printf("%s\n", reg.nomeJogador);
+                free(reg.nomeJogador);
+            }
+
+            printf("Nacionalidade do Jogador: ");
+            if(reg.tamNacionalidade == 0)
+                printf("SEM DADO\n");
+            else{
+                printf("%s\n", reg.Nacionalidade);
+                free(reg.Nacionalidade);
+            }
+
+            printf("Clube do Jogador: ");
+            if(reg.tamNomeClube == 0)
+                printf("SEM DADO\n\n");
+            else{
+                printf("%s\n\n", reg.nomeClube);
+                free(reg.nomeClube);
+            }
+        }
+        else{ //Se o registro estiver removido, pula-se ele. (tamanhoRegistro - 4 bytes pois já foram lidos os campos 'removido' (1 byte) e 'tamanhoRegistro' (4 bytes)).
+            fread(&reg.tamanhoRegistro, 4, 1, f);
+            fseek(f, reg.tamanhoRegistro - 5, SEEK_CUR);
+        }
+
+        controle = getc(f);
+        fseek(f, -1, SEEK_CUR);
+    }
 }
 
 void funcao3(){
@@ -313,9 +384,9 @@ int main(){
     }
     else{
         if(numfuncao == 2){
+            scanf(" %s", char1);
 
-
-
+            funcao2(char1);
         }
         else{
             if(numfuncao == 3){
