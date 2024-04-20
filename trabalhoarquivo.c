@@ -1,3 +1,10 @@
+/*
+Trabalho prático introdutório da disciplina  SCC0215 - Organização de Arquivos.
+Desenvolvido por:
+    Guilherme Pascoale Godoy - nUSP: 14576277
+    Guilherme Antonio Costa Bandeira - nUSP: 14575620
+*/
+
 #include "funcoes_fornecidas.h"
 
 struct cabecalho{
@@ -67,46 +74,6 @@ int le_idade(FILE **incsv){
     return atoi(id);
 }
 
-char* le_nomeJogador(FILE **incsv, int tamNome){
-    char *nome = malloc(sizeof(char)*tamNome);
-    if(nome == NULL){
-        printf("Falha no processamento do arquivo.\n");
-        exit(1);
-    }
-
-    fread(nome, tamNome, 1, *incsv);
-
-    printf("nome: %s\n", nome);
-    printf("nome: %s\n", nome);
-
-
-    return nome;
-}
-
-char* le_nacionalidade(FILE **incsv, int tamNacionalidade){
-    char *nacionalidade = malloc(sizeof(char)*tamNacionalidade);
-    if(nacionalidade == NULL){
-        printf("Falha no processamento do arquivo.\n");
-        exit(1);
-    }
-
-    fread(nacionalidade, tamNacionalidade, 1, *incsv);
-
-    return nacionalidade;
-}
-
-char* le_nomeClube(FILE **incsv, int tamNomeClube){
-    char *nomeClube = malloc(sizeof(char)*tamNomeClube);
-    if(nomeClube == NULL){
-        printf("Falha no processamento do arquivo.\n");
-        exit(1);
-    }
-
-    fread(nomeClube, tamNomeClube, 1, *incsv);
-
-    return nomeClube;
-}
-
 void funcao1(char* texto, char* bin)
 {
     struct cabecalho cab;
@@ -117,7 +84,7 @@ void funcao1(char* texto, char* bin)
 
     if(incsv == NULL){
         printf("Falha no processamento do arquivo de entrada.");
-        exit(1);
+        return;
     }
 
     FILE *outbin;
@@ -125,7 +92,7 @@ void funcao1(char* texto, char* bin)
     
     if(outbin == NULL){
         printf("Falha no processamento do arquivo de saida.");
-        exit(1);
+        return;
     }
 
     (cab.status)[0] = '0';
@@ -177,7 +144,7 @@ void funcao1(char* texto, char* bin)
             reg.nomeJogador = (char *) malloc(sizeof(char)*reg.tamNomeJogador);
             if(reg.nomeJogador == NULL){
                 printf("Falha no processamento do arquivo.\n");
-                exit(1);
+                return;
             }
 
             fread(reg.nomeJogador, reg.tamNomeJogador, 1, incsv);
@@ -203,12 +170,12 @@ void funcao1(char* texto, char* bin)
             reg.Nacionalidade = (char *) malloc(sizeof(char)*reg.tamNacionalidade);
             if(reg.Nacionalidade == NULL){
                 printf("Falha no processamento do arquivo.\n");
-                exit(1);
+                return;
             }
 
             fread(reg.Nacionalidade, reg.tamNacionalidade, 1, incsv);
         }
-        //Fim da função 'le_nomeJogador'.
+        //Fim da função 'le_Nacionalidade'.
         if(reg.tamNacionalidade > 0) //Se tamNacionalidade == 0, o ponteiro já está na posição correta (na vírgula que marca o fim do campo).
             fseek(incsv, 1, SEEK_CUR); //Pula a vírgula após a nacionalidade do jogador.
 
@@ -227,7 +194,7 @@ void funcao1(char* texto, char* bin)
             reg.nomeClube = (char *) malloc(sizeof(char)*reg.tamNomeClube);
             if(reg.nomeClube == NULL){
                 printf("Falha no processamento do arquivo.\n");
-                exit(1);
+                return;
             }
 
             fread(reg.nomeClube, reg.tamNomeClube, 1, incsv);
