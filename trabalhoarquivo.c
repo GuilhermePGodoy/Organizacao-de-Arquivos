@@ -7,6 +7,7 @@ Desenvolvido por:
 
 #include "funcoes_fornecidas.h"
 #include "registros.h"
+#include "funcionalidades.h"
 
 
 struct cabecalho{
@@ -108,28 +109,6 @@ void funcao2(char *filename){
     while((controle = getc(f)) != EOF){
         fseek(f, -1, SEEK_CUR);
 
-/*
-        fread(reg.removido, 1, 1, f);
-
-        if((reg.removido)[0] != '1'){ //Se o registro não estiver removido, será lido.
-            fseek(f, 20, SEEK_CUR); //Pula os campos 'tamanhoRegistro', 'prox', 'id' e 'idade', que não serão exibidos.
-
-            fread(&reg.tamNomeJogador, 4, 1, f);
-            reg.nomeJogador = (char *) malloc(sizeof(char)*reg.tamNomeJogador + 1);
-            fread(reg.nomeJogador, reg.tamNomeJogador, 1, f);
-            reg.nomeJogador[reg.tamNomeJogador] = '\0';
-
-            fread(&reg.tamNacionalidade, 4, 1, f);
-            reg.Nacionalidade = (char *) malloc(sizeof(char)*reg.tamNacionalidade + 1);
-            fread(reg.Nacionalidade, reg.tamNacionalidade, 1, f);
-            reg.Nacionalidade[reg.tamNacionalidade] = '\0';
-
-            fread(&reg.tamNomeClube, 4, 1, f);
-            reg.nomeClube = (char *) malloc(sizeof(char)*reg.tamNomeClube + 1);
-            fread(reg.nomeClube, reg.tamNomeClube, 1, f);
-            reg.nomeClube[reg.tamNomeClube] = '\0';
-*/
-
         reg = le_registro_bin(f);
 
         if((reg.removido)[0] != '1'){
@@ -138,29 +117,194 @@ void funcao2(char *filename){
                 printf("SEM DADO\n");
             else{
                 printf("%s\n", reg.nomeJogador);
-                free(reg.nomeJogador);
             }
+           free(reg.nomeJogador);
 
             printf("Nacionalidade do Jogador: ");
             if(reg.tamNacionalidade == 0)
                 printf("SEM DADO\n");
             else{
                 printf("%s\n", reg.Nacionalidade);
-                free(reg.Nacionalidade);
             }
+            free(reg.Nacionalidade);
 
             printf("Clube do Jogador: ");
             if(reg.tamNomeClube == 0)
                 printf("SEM DADO\n\n");
             else{
                 printf("%s\n\n", reg.nomeClube);
-                free(reg.nomeClube);
             }
+            free(reg.nomeClube);
         }
     }
 }
 
-void funcao3(){
+struct como_busca{
+    int m;
+    int busca_id;
+    int id;
+
+    int busca_idade;
+    int idade;
+
+    int busca_nome;
+    char nome[50];
+    
+    int busca_nacionalidade;
+    char nacionalidade[50];
+
+    int busca_clube;
+    char clube[50];
+
+    int deucerto;
+};
+
+void funcao3(FILE *f, int n){
+    struct como_busca buscas[n];
+    char nomeCampo[20];
+    REGISTRO reg;
+
+
+    for(int i = 0; i < n; i++){
+        buscas[i].deucerto = 0;
+
+        scanf(" %d", &((buscas[i]).m));
+
+        for(int j = 0; j < (buscas[i]).m; j++){
+
+            scanf(" %s", nomeCampo);
+
+            if(strcmp(nomeCampo, "id") == 0){
+                (buscas[i]).busca_id = 1;
+
+                scanf(" %d", &((buscas[i]).id));
+
+            }
+
+
+            if(strcmp(nomeCampo, "idade") == 0){
+                (buscas[i]).busca_idade = 1;
+
+                scanf(" %d", &((buscas[i]).idade));
+            }
+
+
+            if(strcmp(nomeCampo, "nomeJogador") == 0){
+                (buscas[i]).busca_nome = 1;
+
+                scan_quote_string((buscas[i]).nome);
+            }
+
+
+            if(strcmp(nomeCampo, "nacionalidade") == 0){
+                (buscas[i]).busca_nacionalidade = 1;
+
+                scan_quote_string((buscas[i]).nacionalidade);
+            }
+
+
+            if(strcmp(nomeCampo, "nomeClube") == 0){
+                (buscas[i]).busca_clube = 1;
+
+                scan_quote_string((buscas[i]).clube);
+            }
+        }
+    }
+
+    char controle;
+    int cont = 0;
+    int flag = 0; //Flag utilizada para indicar que a busca deve parar. Utilizada para buscas por id, visto que este campo é único para cada jogador.
+
+    for(int i = 0; i < n; i++){
+        fseek(f, 25, SEEK_SET); //Pula o registro de cabeçalho.
+        flag = 0;
+
+        printf("Busca %d\n\n", i + 1);
+
+        while((controle = getc(f)) != EOF){
+            fseek(f, -1, SEEK_CUR);
+
+            cont = 0;
+
+
+            reg = le_registro_bin(f);
+
+
+            if((buscas[i]).busca_id == 1){
+                if(reg.id == (buscas[i]).id){
+                    cont++;
+                    flag = 1;
+                    if((reg.removido)[0] == '1'){
+                        free(reg.nomeJogador);
+                        free(reg.Nacionalidade);
+                        free(reg.nomeClube);
+
+                        break;
+                    }
+                }
+            }
+
+            if((reg.removido)[0] == '1'){
+                free(reg.nomeJogador);
+                free(reg.Nacionalidade);
+                free(reg.nomeClube);
+                continue;
+            }
+
+
+            if((buscas[i]).busca_idade == 1){
+                if(reg.idade == (buscas[i]).idade)
+                    cont++;
+            }
+
+
+            if((buscas[i]).busca_nome == 1){
+                if(strcmp(reg.nomeJogador, (buscas[i]).nome) == 0)
+                    cont++;
+            }
+
+
+            if((buscas[i]).busca_nacionalidade == 1){
+                if(strcmp(reg.Nacionalidade, (buscas[i]).nacionalidade) == 0)
+                    cont++;
+            }
+            if((buscas[i]).busca_clube == 1){
+                if(strcmp(reg.nomeClube, (buscas[i]).clube) == 0)
+                    cont++;
+            }
+
+
+            if(cont == (buscas[i]).m){
+                (buscas[i]).deucerto++;
+
+                if(reg.tamNomeJogador != 0)
+                    printf("Nome do Jogador: %s\n", reg.nomeJogador);
+                else
+                    printf("Nome do Jogador: SEM DADO\n");
+
+                if(reg.tamNacionalidade != 0)
+                    printf("Nacionalidade do Jogador: %s\n", reg.Nacionalidade);
+                else
+                    printf("Nacionalidade do Jogador: SEM DADO\n");
+
+                if(reg.tamNomeClube != 0)
+                    printf("Clube do Jogador: %s\n\n", reg.nomeClube);
+                else
+                    printf("Clube do Jogador: SEM DADO\n\n");
+            }
+
+            free(reg.nomeJogador);
+            free(reg.Nacionalidade);
+            free(reg.nomeClube);
+
+            if(flag == 1)
+                break;
+        }
+
+        if(buscas[i].deucerto == 0)
+            printf("Registro inexistente.\n\n");
+    }
+
     return;
 }
 
@@ -174,13 +318,13 @@ int main(void){
 
     if(numfuncao == 1){
 
-    scanf(" %s", char1);
-    scanf(" %s", char2);
+        scanf(" %s", char1);
+        scanf(" %s", char2);
 
-    funcao1(char1, char2);
+        funcao1(char1, char2);
 
 
-    binarioNaTela(char2);
+        binarioNaTela(char2);
     }
     else{
         if(numfuncao == 2){
@@ -190,7 +334,17 @@ int main(void){
         }
         else{
             if(numfuncao == 3){
+                int n;
+                scanf(" %s", char1);
+                scanf(" %d", &n);
 
+                FILE *f = fopen(char1, "rb");
+                if(f == NULL)
+                    printf("Erro no processamento do arquivo.\n");
+                else
+                    funcao3(f, n);
+
+                fclose(f);
 
             }
 
