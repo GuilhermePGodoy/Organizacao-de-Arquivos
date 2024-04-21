@@ -18,16 +18,11 @@ struct cabecalho{
     int nroRegRem;
 };
 
-//FUNÇÃO DE TESTE PARA IMPRIMIR STRUCT REGISTRO
-void print_struct(struct registro r){
-    printf("removido %s  tamreg %d  prox %ld  id %d  idade %d  tamnome %d  nome%s  tamnac %d  nac %s  tamclube %d  clube %s\n", r.removido, r.tamanhoRegistro, r.prox, r.id, r.idade, r.tamNomeJogador, r.nomeJogador, r.tamNacionalidade, r.Nacionalidade, r.tamNomeClube, r.nomeClube);
-}
-
 
 void funcao1(char* texto, char* bin)
 {
     struct cabecalho cab;
-    struct registro reg;
+    REGISTRO reg;
     char controle = 'a'; //Variável auxiliar para monitorar o fim do arquivo.
 
     FILE *incsv;
