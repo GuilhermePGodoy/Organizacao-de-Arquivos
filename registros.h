@@ -3,6 +3,17 @@
 
 	#include "funcoes_fornecidas.h"
 
+  	//Struct para armazenamento e manipulação do registro de cabeçalho.
+	typedef struct cabecalho{
+	    char status[1];
+	    long int topo;
+	    long int proxByteOffset;
+	    int nroRegArq;
+	    int nroRegRem;
+	} CABECALHO;
+
+	
+
 	//Struct para armazenamento e manipulação dos registros de dados.
 	typedef struct registro{
 	    char removido[1];
