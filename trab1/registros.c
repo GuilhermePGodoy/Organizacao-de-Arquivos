@@ -198,3 +198,8 @@ void escreve_registro(FILE *f, REGISTRO reg){
         free(reg.nomeClube);
     }
 }
+
+void escreve_registro_indice(FILE *f, REG_INDICE reg){
+    fwrite(&(reg.id), 4, 1, f);
+    fwrite(&(reg.byteOffset), 8, 1, f);
+}

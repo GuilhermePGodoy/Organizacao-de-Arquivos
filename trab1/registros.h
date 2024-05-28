@@ -12,7 +12,6 @@
 	    int nroRegRem;
 	} CABECALHO;
 
-	
 
 	//Struct para armazenamento e manipulação dos registros de dados.
 	typedef struct registro{
@@ -29,6 +28,14 @@
 	    char* nomeClube;
 	} REGISTRO;
 
+
+//Struct para armazenar os campos de um registro do índice.
+typedef struct reg_indice{
+	int id;
+	long int byteOffset;
+}REG_INDICE;
+
+
 	//Função que lê um registro de cabeçalho de um arquivo .bin e retorna uma struct CABECALHO com os campos.
 	CABECALHO le_cabecalho(FILE *f);
 
@@ -40,6 +47,12 @@
 
 	//Função que escreve um registro passado como parâmetro em um arquivo .bin.
 	void escreve_registro(FILE *f, REGISTRO reg);
+
+	//Função que lê um registro do índice e retorna uma struct REG_INDICE com os campos.
+	void le_registro_indice(FILE *f);
+
+	//Função que recebe um registro e o escreve no índice.
+	void escreve_registro_indice(FILE *f, REG_INDICE reg);
 
 
 #endif
