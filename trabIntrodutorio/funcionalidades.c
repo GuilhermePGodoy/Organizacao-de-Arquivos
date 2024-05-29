@@ -39,11 +39,7 @@ void funcao1(FILE *incsv, FILE *outbin)
 
     //Escreve no arquivo .bin o registro de cabeçalho campo a campo.
     (cab.status)[0] = '1';
-    fwrite(cab.status, 1, 1, outbin);
-    fwrite(&(cab.topo), 8, 1, outbin);
-    fwrite(&(cab.proxByteOffset), 8, 1, outbin);
-    fwrite(&(cab.nroRegArq), 4, 1, outbin);
-    fwrite(&(cab.nroRegRem), 4, 1, outbin);
+    escreve_cabecalho(cab, outbin);
 }
 
 //Funcionalidade 2: recupera os dados de todos os registros de um arquivo binário.
