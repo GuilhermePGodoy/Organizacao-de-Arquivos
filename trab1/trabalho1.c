@@ -32,6 +32,12 @@ int main(void){
 			break;
 
 		case 5:
+			scanf(" %s %s", nomebin, nomeindice);
+			bin = fopen(nomebin, "rb+");
+			indice = fopen(nomeindice, "rb+");
+
+			funcao5(bin, indice);
+
 			break;
 
 		case 6:

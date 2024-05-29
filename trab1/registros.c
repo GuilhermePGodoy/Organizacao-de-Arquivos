@@ -14,6 +14,14 @@ CABECALHO le_cabecalho(FILE *f){
     return cab;
 }
 
+void escreve_cabecalho(CABECALHO cab, FILE *dados){
+    fwrite(cab.status, 1, 1, dados);
+    fwrite(&(cab.topo), 8, 1, dados);
+    fwrite(&(cab.proxByteOffset), 8, 1, dados);
+    fwrite(&(cab.nroRegArq), 4, 1, dados);
+    fwrite(&(cab.nroRegRem), 4, 1, dados);
+}
+
 //Função que lê um registro de um arquivo .csv e retorna uma struct REGISTRO com os campos.
 REGISTRO le_registro_csv(FILE *f){
     REGISTRO reg;
@@ -197,6 +205,14 @@ void escreve_registro(FILE *f, REGISTRO reg){
         fwrite(reg.nomeClube, reg.tamNomeClube, 1, f);
         free(reg.nomeClube);
     }
+}
+
+REG_INDICE le_registro_indice(FILE *f){
+    REG_INDICE reg;
+    fread(&(reg.id), 4, 1, f);
+    fread(&(reg.byteOffset), 8, 1, f);
+
+    return reg;
 }
 
 void escreve_registro_indice(FILE *f, REG_INDICE reg){

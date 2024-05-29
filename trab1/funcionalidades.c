@@ -1,5 +1,44 @@
 #include "registros.h"
 
+REG_INDICE* carrega_indice(FILE *arq_indice, int nroReg){
+    REG_INDICE *indice = malloc(nroReg*sizeof(REG_INDICE));
+    if(indice == NULL)
+        return NULL;
+
+    rewind(arq_indice);
+
+    for(int i = 0; i < nroReg; i++)
+        indice[i] = le_registro_indice(arq_indice);
+
+    return indice;
+}
+
+int busca_binaria(REG_INDICE indice[], int tamanho, int id) {
+    int inicio = 0;
+    int fim = tamanho - 1;
+
+    while (inicio <= fim) {
+        int meio = inicio + (fim - inicio) / 2;
+
+        // Verifica se o id está no meio
+        if ((indice[meio]).id == id) {
+            return meio;
+        }
+        
+        // Se o id for maior, ignore a metade esquerda
+        if ((indice[meio]).id < id) {
+            inicio = meio + 1;
+        }
+        // Se o id for menor, ignore a metade direita
+        else {
+            fim = meio - 1;
+        }
+    }
+
+    // Alvo não encontrado
+    return -1;
+}
+
 void quickSort(REG_INDICE vetor[], int menor, int maior);
 
 //Funcionalidade 4: criação do índice.
@@ -44,6 +83,8 @@ int funcao4(FILE *dados, FILE *indice){
 	status[0] = '1';
 	rewind(indice);
 	fwrite(status, 1, 1, indice);
+
+    return 1;
 }
 
 void trocar(REG_INDICE *a, REG_INDICE *b) {
@@ -99,14 +140,70 @@ struct como_busca{
     char clube[50]; //Contém o valor do campo buscado.
 };
 
+
+void insere_encadeada(FILE *dados, long int byteOffset, REGISTRO reg){
+    rewind(dados);
+    CABECALHO cab = le_cabecalho(dados);
+    long int prox = cab.topo;
+    REGISTRO atual, proximo;
+
+    if(prox == -1){
+        cab.topo = byteOffset;
+        reg.prox = -1;
+    }
+
+    rewind(dados);
+    escreve_cabecalho(cab, dados);
+    fseek(dados, byteOffset, SEEK_SET);
+    escreve_registro(dados, reg);
+
+    return;
+
+
+    while(prox != -1){
+        fseek(dados, prox, SEEK_SET);
+        atual = le_registro_bin(dados);
+
+        if(atual.prox == -1){
+            atual.prox = byteOffset;
+            reg.prox = -1;
+
+
+            break;
+        }
+        else{ //Inserir no meio.
+            fseek(dados, atual.prox, SEEK_SET);
+            proximo = le_registro_bin(dados);
+
+            if(reg.tamanhoRegistro <= proximo.tamanhoRegistro){
+                reg.prox = atual.prox;
+                atual.prox = byteOffset;
+            }
+        }
+
+        fseek(dados, (-1)*(atual.tamanhoRegistro), SEEK_CUR);
+        escreve_registro(dados, atual);
+
+        fseek(dados, atual.prox, SEEK_SET);
+        escreve_registro(dados, reg);
+    }
+}
+
+
 //Funcionalidade 5:
-REGISTRO* funcao5(FILE *dados, FILE *indice, int n){
+void funcao5(FILE *dados, FILE *arq_indice, int n){
 	CABECALHO cab = le_cabecalho(dados);
 
 	if((cab.status)[0] == '0'){
 		printf("Falha no processamento do arquivo.\n");
 		return;
 	}
+
+    (cab.status)[0] = '0';
+    rewind(dados);
+    escreve_cabecalho(cab, dados);
+
+    REG_INDICE *indice = carrega_indice(arq_indice, cab.nroRegArq);
 
 
     struct como_busca buscas[n]; //Vetor das structs com as informações das n buscas a serem realizadas.
@@ -161,20 +258,23 @@ REGISTRO* funcao5(FILE *dados, FILE *indice, int n){
     char controle; //Variável auxiliar para monitorar o fim do arquivo.
     int cont = 0; //Variável que armazena o número de campos do registro atual que passam na busca (ou seja, são iguais aos buscados).
     int flag = 0; //Flag utilizada para indicar que a busca deve parar. Utilizada para buscas por id, visto que este campo é único para cada jogador.
+    long int byteOffset;
 
     for(int i = 0; i < n; i++){ //Loop para as n buscas.
-        fseek(f, 25, SEEK_SET); //Pula o registro de cabeçalho.
         flag = 0;
 
         printf("Busca %d\n\n", i + 1);
 
-        while((controle = getc(f)) != EOF){ //Loop para percorrer o arquivo binário inteiro.
-            fseek(f, -1, SEEK_CUR); //Se não está no fim do arquivo, volta à posição lida por 'getc()'.
+        byteOffset = 25;
+        while((controle = getc(dados)) != EOF){ //Loop para percorrer o arquivo binário inteiro.
+            fseek(dados, -1, SEEK_CUR); //Se não está no fim do arquivo, volta à posição lida por 'getc()'.
 
             cont = 0;
 
 
-            reg = le_registro_bin(f); 
+            reg = le_registro_bin(dados); 
+
+            byteOffset += reg.tamanhoRegistro;
 
 
             if((buscas[i]).busca_id == 1){ //Verifica se deve fazer a busca pelo campo 'id'.
@@ -226,7 +326,19 @@ REGISTRO* funcao5(FILE *dados, FILE *indice, int n){
 
        			(reg.removido)[0] = '1';
 
-       			escreve_registro()
+                insere_encadeada(dados, byteOffset, reg);
+
+                int posicaoRegRemovido = busca_binaria(indice, cab.nroRegArq, reg.id);
+
+                int i;
+                for(i = 0; i < posicaoRegRemovido; i++)
+                    escreve_registro_indice(arq_indice, indice[i]);
+
+                for(i = posicaoRegRemovido + 1; i < cab.nroRegArq; i++)
+                    escreve_registro_indice(arq_indice, indice[i]);
+
+                cab.nroRegArq--;
+                cab.nroRegRem++;
             }
 
             free(reg.nomeJogador);
@@ -235,17 +347,19 @@ REGISTRO* funcao5(FILE *dados, FILE *indice, int n){
 
             if(flag == 1)  //Se 'flag' == 1, encerra a busca.
                 break;
-        }
 
+        }
+        fseek(dados, 25, SEEK_SET);
+    }
+
+    rewind(dados);
+    escreve_cabecalho(cab, dados);
+
+    free(indice);
 
     return;
 }
 
-
-void funcao5(FILE *dados, FILE *indice){
-
-
-}
 
 
 void funcao6(FILE *dados, FILE *indice){
