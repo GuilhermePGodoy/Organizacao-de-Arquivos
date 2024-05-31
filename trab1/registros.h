@@ -40,7 +40,7 @@ typedef struct reg_indice{
 	CABECALHO le_cabecalho(FILE *f);
 
 	//Função que escreve o registro de cabeçalho no arquivo .bin.
-	void escreve_cabecalho(CABECALHO cab, FILE *dados);
+	void escreve_cabecalho(FILE *dados, CABECALHO cab);
 
 	//Função que lê um registro de um arquivo .csv e retorna uma struct REGISTRO com os campos.
 	REGISTRO le_registro_csv(FILE *f);

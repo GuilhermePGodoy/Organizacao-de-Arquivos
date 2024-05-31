@@ -14,7 +14,7 @@ CABECALHO le_cabecalho(FILE *f){
     return cab;
 }
 
-void escreve_cabecalho(CABECALHO cab, FILE *dados){
+void escreve_cabecalho(FILE *dados, CABECALHO cab){
     fwrite(cab.status, 1, 1, dados);
     fwrite(&(cab.topo), 8, 1, dados);
     fwrite(&(cab.proxByteOffset), 8, 1, dados);
