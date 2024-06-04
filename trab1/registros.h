@@ -51,6 +51,9 @@ typedef struct reg_indice{
 	//Função que escreve um registro passado como parâmetro em um arquivo .bin.
 	void escreve_registro(FILE *f, REGISTRO reg);
 
+	//Função que libera a memória alocada para os campos de tamanho variável de um registro.
+	void libera_registro(REGISTRO reg);
+
 	//Função que lê um registro do índice e retorna uma struct REG_INDICE com os campos.
 	REG_INDICE le_registro_indice(FILE *f);
 

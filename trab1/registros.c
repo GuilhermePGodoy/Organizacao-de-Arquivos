@@ -204,20 +204,22 @@ void escreve_registro(FILE *f, REGISTRO reg){
     //Escrita dos campos de tamanho variável:
     //Escreve o campo 'tamCampo' e, se o campo não for vazio, escreve-o e desaloca o ponteiro da struct.
     fwrite(&(reg.tamNomeJogador), 4, 1, f);
-    if(reg.tamNomeJogador > 0){
+    if(reg.tamNomeJogador > 0)
         fwrite(reg.nomeJogador, reg.tamNomeJogador, 1, f);
-        free(reg.nomeJogador);
-    }
+
     fwrite(&(reg.tamNacionalidade), 4, 1, f);
-    if(reg.tamNacionalidade > 0){
+    if(reg.tamNacionalidade > 0)
         fwrite(reg.Nacionalidade, reg.tamNacionalidade, 1, f);
-        free(reg.Nacionalidade);
-    }
+
     fwrite(&(reg.tamNomeClube), 4, 1, f);
-    if(reg.tamNomeClube > 0){
+    if(reg.tamNomeClube > 0)
         fwrite(reg.nomeClube, reg.tamNomeClube, 1, f);
-        free(reg.nomeClube);
-    }
+}
+
+void libera_registro(REGISTRO reg){
+    free(reg.nomeJogador);
+    free(reg.Nacionalidade);
+    free(reg.nomeClube);
 }
 
 REG_INDICE le_registro_indice(FILE *f){
