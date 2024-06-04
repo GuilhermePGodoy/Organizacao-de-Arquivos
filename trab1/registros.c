@@ -151,6 +151,12 @@ REGISTRO le_registro_csv(FILE *f){
 REGISTRO le_registro_bin(FILE *f){
 	REGISTRO reg;
 
+    reg.tamNomeJogador = 0;
+    reg.Nacionalidade = 0;
+    reg.tamNomeClube = 0;
+
+    int tamUsado = 33; //Variável que armazenará o tamanho efetivamente usado de 'tamanhoRegistro', visto que pode haver lixo no fim do registro. Começa com 33, que é a soma dos tamanhos dos campos de tamanho fixo.
+
 	//Leitura dos 5 primeiros campos, todos de tamanho fixo.
 	fread(reg.removido, 1, 1, f);
 	fread(&(reg.tamanhoRegistro), 4, 1, f);
@@ -159,22 +165,29 @@ REGISTRO le_registro_bin(FILE *f){
 	fread(&(reg.idade), 4, 1, f);
 
 	//Leitura dos campos de tamanho variável:
-	//		Lê o campo 'tamCampo' e aloca dinamicamente espaço para o valor do campo e para o '\0' (para facilitar operações como o print do campo na tela).
+	//Lê o campo 'tamCampo' e aloca dinamicamente espaço para o valor do campo e para o '\0' (para facilitar operações como o print do campo na tela).
     fread(&(reg.tamNomeJogador), 4, 1, f);
-    reg.nomeJogador = (char *) malloc(sizeof(char)*reg.tamNomeJogador + 1);
+    tamUsado += reg.tamNomeJogador;
+    reg.nomeJogador = (char *) malloc(sizeof(char)*(reg.tamNomeJogador) + 1);
     fread(reg.nomeJogador, reg.tamNomeJogador, 1, f);
     reg.nomeJogador[reg.tamNomeJogador] = '\0';
 
     fread(&reg.tamNacionalidade, 4, 1, f);
-    reg.Nacionalidade = (char *) malloc(sizeof(char)*reg.tamNacionalidade + 1);
+    tamUsado += reg.tamNacionalidade;
+    reg.Nacionalidade = (char *) malloc(sizeof(char)*(reg.tamNacionalidade) + 1);
     fread(reg.Nacionalidade, reg.tamNacionalidade, 1, f);
     reg.Nacionalidade[reg.tamNacionalidade] = '\0';
 
     fread(&reg.tamNomeClube, 4, 1, f);
-    reg.nomeClube = (char *) malloc(sizeof(char)*reg.tamNomeClube + 1);
+    tamUsado += reg.tamNomeClube;
+    reg.nomeClube = (char *) malloc(sizeof(char)*(reg.tamNomeClube) + 1);
     fread(reg.nomeClube, reg.tamNomeClube, 1, f);
     reg.nomeClube[reg.tamNomeClube] = '\0';
 
+    if(tamUsado != reg.tamanhoRegistro){
+        fseek(f, reg.tamanhoRegistro - tamUsado, SEEK_CUR); //Posiciona o cursor após o lixo do fim do registro (se não há lixo, tamanhoRegistro - tamUsado == 0 e o cursor está na posição correta).
+    }
+    
     return reg;
 }
 
@@ -189,7 +202,7 @@ void escreve_registro(FILE *f, REGISTRO reg){
     fwrite(&(reg.idade), 4, 1, f);
 
     //Escrita dos campos de tamanho variável:
-    //		Escreve o campo 'tamCampo' e, se o campo não for vazio, escreve-o e desaloca o ponteiro da struct.
+    //Escreve o campo 'tamCampo' e, se o campo não for vazio, escreve-o e desaloca o ponteiro da struct.
     fwrite(&(reg.tamNomeJogador), 4, 1, f);
     if(reg.tamNomeJogador > 0){
         fwrite(reg.nomeJogador, reg.tamNomeJogador, 1, f);

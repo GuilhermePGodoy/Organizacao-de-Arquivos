@@ -1,11 +1,11 @@
 #include "registros.h"
 
 REG_INDICE* carrega_indice(FILE *arq_indice, int nroReg){
-    REG_INDICE *indice = malloc(nroReg*sizeof(REG_INDICE));
+    REG_INDICE *indice = (REG_INDICE*) malloc(nroReg*sizeof(REG_INDICE));
     if(indice == NULL)
         return NULL;
 
-    rewind(arq_indice);
+    fseek(arq_indice, 1, SEEK_SET);
 
     for(int i = 0; i < nroReg; i++)
         indice[i] = le_registro_indice(arq_indice);
@@ -13,12 +13,13 @@ REG_INDICE* carrega_indice(FILE *arq_indice, int nroReg){
     return indice;
 }
 
-int busca_binaria(REG_INDICE indice[], int tamanho, int id) {
+int busca_binaria(REG_INDICE *indice, int tamanho, int id) {
     int inicio = 0;
     int fim = tamanho - 1;
+    int meio;
 
     while (inicio <= fim) {
-        int meio = inicio + (fim - inicio) / 2;
+        meio = (fim + inicio) / 2;
 
         // Verifica se o id está no meio
         if ((indice[meio]).id == id) {
@@ -37,6 +38,15 @@ int busca_binaria(REG_INDICE indice[], int tamanho, int id) {
 
     // Alvo não encontrado
     return -1;
+}
+
+long int busca_id(REG_INDICE *indice, int tamanho, int id){
+    int posicaoReg = busca_binaria(indice, tamanho, id);
+
+    if(posicaoReg == -1)
+        return -1;
+    else
+        return (indice[posicaoReg]).byteOffset;
 }
 
 void quickSort(REG_INDICE vetor[], int menor, int maior);
@@ -63,8 +73,9 @@ int funcao4(FILE *dados, FILE *indice){
 	int j = 0;
 
 	for(int i = 0; i < cab.nroRegArq + cab.nroRegRem; i++){
+
 		reg = le_registro_bin(dados);
-		
+
 		if((reg.removido)[0] == '0'){
 			(registros[j]).id = reg.id;
 			(registros[j]).byteOffset = byteOffset;
@@ -141,10 +152,14 @@ struct como_busca{
 };
 
 
+
 void insere_encadeada(FILE *dados, long int byteOffset, REGISTRO reg){
+
+    long int byteOffset_atual;
+    REGISTRO atual, proximo;
+
     rewind(dados);
     CABECALHO cab = le_cabecalho(dados);
-    REGISTRO atual, proximo;
 
     //Inserção na lista vazia.
     if(cab.topo == -1){
@@ -161,10 +176,11 @@ void insere_encadeada(FILE *dados, long int byteOffset, REGISTRO reg){
 
     fseek(dados, cab.topo, SEEK_SET);
     atual = le_registro_bin(dados);
-
+    byteOffset_atual = cab.topo;
+    
     //Inserção no início da lista.
     if(reg.tamanhoRegistro <= atual.tamanhoRegistro){
-        reg.prox = cab.topo;
+        reg.prox = byteOffset_atual;
         cab.topo = byteOffset;
 
         rewind(dados);
@@ -172,15 +188,20 @@ void insere_encadeada(FILE *dados, long int byteOffset, REGISTRO reg){
         fseek(dados, byteOffset, SEEK_SET);
         escreve_registro(dados, reg);
 
+        free(atual.nomeJogador);
+        free(atual.Nacionalidade);
+        free(atual.nomeClube);
+
+
         return;
     }
 
-    //Inserção na lista com apenas um elemento.
+    //Inserção no fim da lista com apenas um elemento.
     if(atual.prox == -1){
         atual.prox = byteOffset;
         reg.prox = -1;
 
-        fseek(dados, cab.topo, SEEK_SET);
+        fseek(dados, byteOffset_atual, SEEK_SET);
         escreve_registro(dados, atual);
         fseek(dados, byteOffset, SEEK_SET);
         escreve_registro(dados, reg);
@@ -191,21 +212,30 @@ void insere_encadeada(FILE *dados, long int byteOffset, REGISTRO reg){
     fseek(dados, atual.prox, SEEK_SET);
     proximo = le_registro_bin(dados);
 
-    while(atual.prox != -1 && reg.tamanhoRegistro > proximo.tamanhoRegistro){
+    while(proximo.prox != -1 && reg.tamanhoRegistro > proximo.tamanhoRegistro){
+
+        free(atual.nomeJogador);
+        free(atual.Nacionalidade);
+        free(atual.nomeClube);
+        byteOffset_atual = atual.prox;
         atual = proximo;
         fseek(dados, proximo.prox, SEEK_SET);
         proximo = le_registro_bin(dados);
     }
 
     //Inserção no fim.
-    if(atual.prox == -1){
-        atual.prox = byteOffset;
+    if(proximo.prox == -1 && reg.tamanhoRegistro > proximo.tamanhoRegistro){
+        proximo.prox = byteOffset;
         reg.prox = -1;
 
-        fseek(dados, (-1)*atual.tamanhoRegistro, SEEK_SET);
-        escreve_registro(dados, atual);
+        fseek(dados, (-1)*proximo.tamanhoRegistro, SEEK_CUR);
+        escreve_registro(dados, proximo);
         fseek(dados, byteOffset, SEEK_SET);
         escreve_registro(dados, reg);
+
+        free(atual.nomeJogador);
+        free(atual.Nacionalidade);
+        free(atual.nomeClube);
 
         return;
     }
@@ -214,12 +244,20 @@ void insere_encadeada(FILE *dados, long int byteOffset, REGISTRO reg){
     reg.prox = atual.prox;
     atual.prox = byteOffset;
 
-    fseek(dados, (-1)*atual.tamanhoRegistro, SEEK_SET);
+    fseek(dados, byteOffset_atual, SEEK_SET);
     escreve_registro(dados, atual);
     fseek(dados, byteOffset, SEEK_SET);
     escreve_registro(dados, reg);
+
+    free(proximo.nomeJogador);
+    free(proximo.Nacionalidade);
+    free(proximo.nomeClube);
 }
 
+void remove_registro_indice(REG_INDICE *indice, int tamanho, int posicao_registro){
+    for(int i = posicao_registro + 1; i < tamanho; i++)
+    indice[i-1] = indice[i];
+}
 
 //Funcionalidade 5: realiza a remoção de registros por qualquer campo.
 int funcao5(FILE *dados, FILE *arq_indice, int n){
@@ -296,70 +334,110 @@ int funcao5(FILE *dados, FILE *arq_indice, int n){
         }
     }
 
-
     //char controle; //Variável auxiliar para monitorar o fim do arquivo.
-    int cont = 0; //Variável que armazena o número de campos do registro atual que passam na busca (ou seja, são iguais aos buscados).
-    int flag = 0; //Flag utilizada para indicar que a busca deve parar. Utilizada para buscas por id, visto que este campo é único para cada jogador.
+    int cont; //Variável que armazena o número de campos do registro atual que passam na busca (ou seja, são iguais aos buscados).
+    int flag; //Flag utilizada para indicar que a busca deve parar. Utilizada para buscas por id, visto que este campo é único para cada jogador.
     long int byteOffset;
 
     for(int i = 0; i < n; i++){ //Loop para as n buscas.
 
         flag = 0;
+        cont = 0;
         byteOffset = 25;
 
-        for(int j = 0; j < cab.nroRegArq + cab.nroRegRem; j++){ //Loop para percorrer o arquivo binário inteiro.
+        if((buscas[i]).busca_id == 1){
 
-            cont = 0;
+            int posicao_registro = busca_binaria(indice, cab.nroRegArq, (buscas[i]).id);
 
-            reg = le_registro_bin(dados); 
-
-            byteOffset += reg.tamanhoRegistro;
-
-
-            if((buscas[i]).busca_id == 1){ //Verifica se deve fazer a busca pelo campo 'id'.
-
-                if(reg.id == (buscas[i]).id){ //Se sim, verifica se o campo 'id' do registro é igual ao id buscado.
-                    cont++; //Se sim, incrementa 'cont'.
-                    flag = 1; //O id buscado foi encontrado e, por ser único para cada jogador, não é necessário continuar a busca pelo arquivo. Logo, 'flag' deve receber 1.
-
-                    if((reg.removido)[0] == '1'){ //O id buscado foi encontrado, mas o registro está marcado como removido. Logo, a busca não foi bem-sucedida e deve parar.
-                        free(reg.nomeJogador);
-                        free(reg.Nacionalidade);
-                        free(reg.nomeClube);
-
-                        break; //Encerra a busca.
-                    }
-                }
-            }
-
-            if((reg.removido)[0] == '1'){ //Se o registro estiver marcado como removido, pula-se este registro.
-                free(reg.nomeJogador);
-                free(reg.Nacionalidade);
-                free(reg.nomeClube);
+            if(posicao_registro == -1){
+                fseek(dados, 25, SEEK_SET);
                 continue;
             }
 
+            flag = 1;
+            cont++;
+
+            byteOffset = (indice[posicao_registro]).byteOffset;
+            fseek(dados, byteOffset, SEEK_SET);
+
+            reg = le_registro_bin(dados);
 
             if((buscas[i]).busca_idade == 1){ //Verifica se a busca por 'idade' deve ser feita.
                 if(reg.idade == (buscas[i]).idade) //Se sim, realiza a comparação.
                     cont++; //Se passar na busca, incrementa 'cont'.
             }
 
-
             if((buscas[i]).busca_nome == 1){ //Verifica se a busca por 'nomeJogador' deve ser feita.
                 if(strcmp(reg.nomeJogador, (buscas[i]).nome) == 0) //Se sim, realiza a comparação.
                     cont++; //Se passar na busca, incrementa 'cont'.
             }
 
-
             if((buscas[i]).busca_nacionalidade == 1){ //Verifica se a busca por 'Nacionalidade' deve ser feita.
                 if(strcmp(reg.Nacionalidade, (buscas[i]).nacionalidade) == 0) //Se sim, realiza a comparação.
                     cont++; //Se passar na busca, incrementa 'cont'.
             }
+
             if((buscas[i]).busca_clube == 1){ //Verifica se a busca por 'nomeClube' deve ser feita.
                 if(strcmp(reg.nomeClube, (buscas[i]).clube) == 0) //Se sim, realiza a comparação.
                     cont++; //Se passar na busca, incrementa 'cont'.
             }
+
+            if(cont == (buscas[i]).m){ //Se o registro atende a todas as buscas por campo feitas, então cont == m.
+
+                (reg.removido)[0] = '1';
+
+                insere_encadeada(dados, byteOffset, reg);
+
+                remove_registro_indice(indice, cab.nroRegArq, posicao_registro);
+
+                cab.nroRegArq--;
+                cab.nroRegRem++;
+            }
+            else{
+                free(reg.nomeJogador);
+                free(reg.Nacionalidade);
+                free(reg.nomeClube);
+            }
+        }
+        else{
+            for(int j = 0; j < cab.nroRegArq + cab.nroRegRem; j++){ //Loop para percorrer o arquivo binário inteiro.
+
+                cont = 0;
+
+                reg = le_registro_bin(dados); 
+
+
+                if((reg.removido)[0] == '1'){ //Se o registro estiver marcado como removido, pula-se este registro.
+                    free(reg.nomeJogador);
+                    free(reg.Nacionalidade);
+                    free(reg.nomeClube);
+
+                    byteOffset += reg.tamanhoRegistro;
+
+                    continue;
+                }
+
+
+                if((buscas[i]).busca_idade == 1){ //Verifica se a busca por 'idade' deve ser feita.
+                    if(reg.idade == (buscas[i]).idade) //Se sim, realiza a comparação.
+                        cont++; //Se passar na busca, incrementa 'cont'.
+                }
+
+
+                if((buscas[i]).busca_nome == 1){ //Verifica se a busca por 'nomeJogador' deve ser feita.
+                    if(strcmp(reg.nomeJogador, (buscas[i]).nome) == 0) //Se sim, realiza a comparação.
+                        cont++; //Se passar na busca, incrementa 'cont'.
+                }
+
+
+                if((buscas[i]).busca_nacionalidade == 1){ //Verifica se a busca por 'Nacionalidade' deve ser feita.
+                    if(strcmp(reg.Nacionalidade, (buscas[i]).nacionalidade) == 0) //Se sim, realiza a comparação.
+                        cont++; //Se passar na busca, incrementa 'cont'.
+                }
+                if((buscas[i]).busca_clube == 1){ //Verifica se a busca por 'nomeClube' deve ser feita.
+                    if(strcmp(reg.nomeClube, (buscas[i]).clube) == 0) //Se sim, realiza a comparação.
+                        cont++; //Se passar na busca, incrementa 'cont'.
+                }
 
 
             if(cont == (buscas[i]).m){ //Se o registro atende a todas as buscas por campo feitas, então cont == m.
@@ -370,32 +448,24 @@ int funcao5(FILE *dados, FILE *arq_indice, int n){
 
                 int posicaoRegRemovido = busca_binaria(indice, cab.nroRegArq, reg.id);
 
-                for(int k = posicaoRegRemovido + 1; k < cab.nroRegArq; k++)
-                    indice[k - 1] = indice[k];
-                                
-/*
-                rewind(arq_indice);
-                int k;
-
-                for(k = 0; k < posicaoRegRemovido; k++)
-                    escreve_registro_indice(arq_indice, indice[k]);
-
-                for(k = posicaoRegRemovido + 1; k < cab.nroRegArq; k++)
-                    escreve_registro_indice(arq_indice, indice[k]);
-*/
+                remove_registro_indice(indice, cab.nroRegArq, posicaoRegRemovido);
 
                 cab.nroRegArq--;
                 cab.nroRegRem++;
-
-                fseek(dados, byteOffset, SEEK_SET);
+            }
+            else{
+                free(reg.nomeJogador);
+                free(reg.Nacionalidade);
+                free(reg.nomeClube);
             }
 
-//            free(reg.nomeJogador);
-//            free(reg.Nacionalidade);
-//            free(reg.nomeClube);
+            byteOffset += (long int) reg.tamanhoRegistro;
+
+            fseek(dados, byteOffset, SEEK_SET);
 
             if(flag == 1)  //Se 'flag' == 1, encerra a busca.
                 break;
+            }
         }
 
         fseek(dados, 25, SEEK_SET);
@@ -403,13 +473,30 @@ int funcao5(FILE *dados, FILE *arq_indice, int n){
 
     rewind(dados);
     (cab.status)[0] = '1';
-    escreve_cabecalho(dados, cab);
+    fwrite(cab.status, 1, 1, dados);
+
+
+    FILE *novo_indice = fopen("novoindice.bin", "wb");
+    if(novo_indice == NULL)
+        return 0;
+
 
     rewind(arq_indice);
+
+    char status[1];
+    status[0] = '1';
+    fwrite(status, 1, 1, novo_indice);
+
     for(int i = 0; i < cab.nroRegArq; i++)
-        escreve_registro_indice(arq_indice, indice[i]);
+        escreve_registro_indice(novo_indice, indice[i]);
 
     free(indice);
+
+
+    fclose(novo_indice);
+    printf("novo_indice: ");
+    binarioNaTela("novoindice.bin");
+
 
     return 1;
 }
