@@ -29,11 +29,11 @@
 	} REGISTRO;
 
 
-//Struct para armazenar os campos de um registro do índice.
-typedef struct reg_indice{
-	int id;
-	long int byteOffset;
-}REG_INDICE;
+	//Struct para armazenar os campos de um registro do índice.
+	typedef struct reg_indice{
+		int id;
+		long int byteOffset;
+	}REG_INDICE;
 
 
 	//Função que lê um registro de cabeçalho de um arquivo .bin e retorna uma struct CABECALHO com os campos.

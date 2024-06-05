@@ -3,6 +3,6 @@
 
 	int funcao4(FILE *dados, FILE *indice);
 	int funcao5(FILE *dados, FILE *indice, int n);
-	void funcao6(FILE *dados, FILE *indice);
+	int funcao6(FILE *dados, FILE *indice, int n);
 
 #endif

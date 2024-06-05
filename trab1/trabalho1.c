@@ -8,6 +8,7 @@ int main(void){
 
 	scanf(" %d", &comando);
 
+	int n;
 	switch(comando){
 		case 4:
 			scanf(" %s %s", nome_arq_dados, nome_arq_indice);
@@ -37,9 +38,7 @@ int main(void){
 
 			break;
 
-		case 5:
-			int n;
-
+		case 5: //ARRUMAR O PRINT DO ÍNDICE!!!! (NO MOMENTO TÁ PRINTANDO O BINARIONATELA DO 'NOVO_INDICE')
 			scanf(" %s %s", nome_arq_dados, nome_arq_indice);
 			scanf(" %d", &n);
 
@@ -58,7 +57,8 @@ int main(void){
 					fclose(indice);
 
 					binarioNaTela(nome_arq_dados);
-					binarioNaTela(nome_arq_indice);
+					binarioNaTela("novoindice.bin");
+					//binarioNaTela(nome_arq_indice);
 				}
 				else{
 					printf("Falha no processamento do arquivo.\n");
@@ -69,6 +69,33 @@ int main(void){
 			}
 			break;
 		case 6:
+			scanf(" %s %s", nome_arq_dados, nome_arq_indice);
+			scanf(" %d", &n);
+
+			dados = fopen(nome_arq_dados, "rb+");
+			indice = fopen(nome_arq_indice, "rb+");
+
+			if(dados == NULL || indice == NULL){
+				printf("Falha no processamento do arquivo.\n");
+
+				fclose(dados);
+				fclose(indice);
+			}
+			else{
+				if(funcao6(dados, indice, n) == 1){
+					fclose(dados);
+					fclose(indice);
+
+					binarioNaTela(nome_arq_dados);
+					binarioNaTela(nome_arq_indice);
+				}
+				else{
+					printf("Falha no processamento do arquivo.\n");
+					
+					fclose(dados);
+					fclose(indice);
+				}
+			}
 			break;
 	}
 
