@@ -38,53 +38,20 @@ int main(void){
 
 			break;
 
-		case 5: //ARRUMAR O PRINT DO ÍNDICE!!!! (NO MOMENTO TÁ PRINTANDO O BINARIONATELA DO 'NOVO_INDICE')
+		case 5:
 			scanf(" %s %s", nome_arq_dados, nome_arq_indice);
 			scanf(" %d", &n);
 
 			dados = fopen(nome_arq_dados, "rb+");
-			indice = fopen(nome_arq_indice, "rb+");
 
-			if(dados == NULL || indice == NULL){
+			if(dados == NULL){
 				printf("Falha no processamento do arquivo.\n");
 
 				fclose(dados);
-				fclose(indice);
 			}
 			else{
-				if(funcao5(dados, indice, n) == 1){
+				if(funcao5(dados, nome_arq_indice, n) == 1){
 					fclose(dados);
-					fclose(indice);
-
-					binarioNaTela(nome_arq_dados);
-					binarioNaTela("novoindice.bin");
-					//binarioNaTela(nome_arq_indice);
-				}
-				else{
-					printf("Falha no processamento do arquivo.\n");
-					
-					fclose(dados);
-					fclose(indice);
-				}
-			}
-			break;
-		case 6:
-			scanf(" %s %s", nome_arq_dados, nome_arq_indice);
-			scanf(" %d", &n);
-
-			dados = fopen(nome_arq_dados, "rb+");
-			indice = fopen(nome_arq_indice, "rb+");
-
-			if(dados == NULL || indice == NULL){
-				printf("Falha no processamento do arquivo.\n");
-
-				fclose(dados);
-				fclose(indice);
-			}
-			else{
-				if(funcao6(dados, indice, n) == 1){
-					fclose(dados);
-					fclose(indice);
 
 					binarioNaTela(nome_arq_dados);
 					binarioNaTela(nome_arq_indice);
@@ -93,7 +60,31 @@ int main(void){
 					printf("Falha no processamento do arquivo.\n");
 					
 					fclose(dados);
-					fclose(indice);
+				}
+			}
+			break;
+		case 6:
+			scanf(" %s %s", nome_arq_dados, nome_arq_indice);
+			scanf(" %d", &n);
+
+			dados = fopen(nome_arq_dados, "rb+");
+
+			if(dados == NULL){
+				printf("Falha no processamento do arquivo.\n");
+
+				fclose(dados);
+			}
+			else{
+				if(funcao6(dados, nome_arq_indice, n) == 1){
+					fclose(dados);
+
+					binarioNaTela(nome_arq_dados);
+					binarioNaTela(nome_arq_indice);
+				}
+				else{
+					printf("Falha no processamento do arquivo.\n");
+					
+					fclose(dados);
 				}
 			}
 			break;

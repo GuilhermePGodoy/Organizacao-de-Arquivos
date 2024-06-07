@@ -2,6 +2,7 @@
 
 #include "registros.h"
 
+//Lê os campos do registro de cabeçalho e retorna uma struct CABECALHO com os dados.
 CABECALHO le_cabecalho(FILE *f){
     CABECALHO cab;
 
@@ -14,6 +15,7 @@ CABECALHO le_cabecalho(FILE *f){
     return cab;
 }
 
+//Recebe uma struct CABECALHO e escreve seus campos no arquivo de dados.
 void escreve_cabecalho(FILE *dados, CABECALHO cab){
     fwrite(cab.status, 1, 1, dados);
     fwrite(&(cab.topo), 8, 1, dados);
@@ -216,12 +218,15 @@ void escreve_registro(FILE *f, REGISTRO reg){
         fwrite(reg.nomeClube, reg.tamNomeClube, 1, f);
 }
 
+
+//Libera a memória alocada pela função 'le_registro_bin'.
 void libera_registro(REGISTRO reg){
     free(reg.nomeJogador);
     free(reg.Nacionalidade);
     free(reg.nomeClube);
 }
 
+//Lê os campos de um registro do índice e retorna seus valores em uma struct REG_INDICE.
 REG_INDICE le_registro_indice(FILE *f){
     REG_INDICE reg;
     fread(&(reg.id), 4, 1, f);
@@ -230,6 +235,7 @@ REG_INDICE le_registro_indice(FILE *f){
     return reg;
 }
 
+//Recebe uma struct REG_INDICE e escreve seus campos no arquivo de índice.
 void escreve_registro_indice(FILE *f, REG_INDICE reg){
     fwrite(&(reg.id), 4, 1, f);
     fwrite(&(reg.byteOffset), 8, 1, f);

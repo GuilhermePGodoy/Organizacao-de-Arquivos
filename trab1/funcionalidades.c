@@ -1,82 +1,9 @@
 #include "registros.h"
 #include "indice.h"
 
-/*
-Funções auxiliares para ordenação dos registros do índice por id.
-*/
-
-
-void trocar_insercoes(REGISTRO *a, REGISTRO *b) {
-    REGISTRO temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-// Função para particionar o vetor
-int particionar_insercao(REGISTRO vetor[], int menor, int maior) {
-    int pivot = (vetor[maior]).tamanhoRegistro;
-    int i = (menor - 1);
-
-    for (int j = menor; j <= maior - 1; j++) {
-        if ((vetor[j]).tamanhoRegistro <= pivot) {
-            i++;
-            trocar_insercoes(&vetor[i], &vetor[j]);
-        }
-    }
-    trocar_insercoes(&vetor[i + 1], &vetor[maior]);
-    return (i + 1);
-}
-
-// Função principal que implementa o QuickSort
-void ordena_insercoes(REGISTRO vetor[], int menor, int maior) {
-    if (menor < maior){
-        // pi é o índice da partição, vetor[pi] está no lugar certo
-        int pi = particionar_insercao(vetor, menor, maior);
-
-        // Separadamente ordena os elementos antes e depois da partição
-        ordena_insercoes(vetor, menor, pi - 1);
-        ordena_insercoes(vetor, pi + 1, maior);
-    }
-}
-
-
-
-
-void trocar(REG_INDICE *a, REG_INDICE *b) {
-    REG_INDICE temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-// Função para particionar o vetor
-int particionar(REG_INDICE vetor[], int menor, int maior) {
-    int pivot = (vetor[maior]).id;
-    int i = (menor - 1);
-
-    for (int j = menor; j <= maior - 1; j++) {
-        if ((vetor[j]).id <= pivot) {
-            i++;
-            trocar(&vetor[i], &vetor[j]);
-        }
-    }
-    trocar(&vetor[i + 1], &vetor[maior]);
-    return (i + 1);
-}
-
-
-void ordena_id(REG_INDICE vetor[], int menor, int maior) {
-    if (menor < maior){
-        // pi é o índice da partição, vetor[pi] está no lugar certo
-        int pi = particionar(vetor, menor, maior);
-
-        // Separadamente ordena os elementos antes e depois da partição
-        ordena_id(vetor, menor, pi - 1);
-        ordena_id(vetor, pi + 1, maior);
-    }
-}
-
 //Funcionalidade 4: criação do índice.
 int funcao4(FILE *dados, FILE *indice){
+
 	CABECALHO cab = le_cabecalho(dados); //Struct para armazenar os campos do registro de cabeçalho do arquivo de dados.
 	REGISTRO reg; //Struct para armazenar os campos de um registro do arquivo de dados.
 
@@ -86,37 +13,39 @@ int funcao4(FILE *dados, FILE *indice){
 	fwrite(status, 1, 1, indice);
 
 	//Verifica se o arquivo de dados está consistente.
-	if((cab.status)[0] == '0'){
+	if((cab.status)[0] == '0')
 		return 0;
-	}
 
 
 	REG_INDICE registros[cab.nroRegArq]; //Vetor usado para armazenar todos os registros do índice, que serão ordenados por 'id' posteriormente.
 
 	long int byteOffset = 25; //Variável que armazena o byteOffset do registro que está sendo tratado no momento.
-	int j = 0;
+	int j = 0; //variável para percorrer o vetor com os registros do índice.
 
-	for(int i = 0; i < cab.nroRegArq + cab.nroRegRem; i++){
+	for(int i = 0; i < cab.nroRegArq + cab.nroRegRem; i++){ //Loop para percorrer o arquivo de dados inteiro.
 
-		reg = le_registro_bin(dados);
+		reg = le_registro_bin(dados); //Lê o próximo registro do arquivo.
 
-		if((reg.removido)[0] == '0'){
+		if((reg.removido)[0] == '0'){ //Se o registro não está removido, armazena seu id e seu byteOffset na posição atual de 'indice'
 			(registros[j]).id = reg.id;
 			(registros[j]).byteOffset = byteOffset;
-			j++;
+			j++; //Incrementa 'j' para acessar a próxima posição livre no vetor 'indice'.
 		}
 
-		byteOffset += reg.tamanhoRegistro;
+		byteOffset += reg.tamanhoRegistro; //Atualiza 'byteOffset' para o byte offset do próximo registro do arquivo.
 
-        libera_registro(reg);
+        libera_registro(reg); //Libera a memória alocada para o registro.
 	}
 
+    //Ordenação dos registros do índice por id.
 	ordena_id(registros, 0, cab.nroRegArq - 1);
 
+    //Escrita dos registros do vetor no arquivo de índice.
 	for(int i = 0; i < cab.nroRegArq; i++){
 		escreve_registro_indice(indice, registros[i]);
 	}
 
+    //As escritas no arquivo acabaram, logo 'status' recebe 1.
 	status[0] = '1';
 	rewind(indice);
 	fwrite(status, 1, 1, indice);
@@ -146,6 +75,7 @@ struct como_busca{
 };
 
 
+//Função auxiliar que insere um registro removido na lista encadeada de removidos.
 void insere_listaRemovidos(FILE *dados, long int byteOffset, REGISTRO reg){
 
     long int byteOffset_atual;
@@ -156,9 +86,12 @@ void insere_listaRemovidos(FILE *dados, long int byteOffset, REGISTRO reg){
 
     //Inserção na lista vazia.
     if(cab.topo == -1){
+        //Atualiza o campo 'topo' do cabeçalho para o byte offset do registro a ser inserido na lista.
         cab.topo = byteOffset;
+        //'reg' é o último registro da lista, logo 'prox' deve receber -1.
         reg.prox = -1;
 
+        //Escreve as alterações no arquivo.
         rewind(dados);
         escreve_cabecalho(dados, cab);
         fseek(dados, byteOffset, SEEK_SET);
@@ -168,7 +101,7 @@ void insere_listaRemovidos(FILE *dados, long int byteOffset, REGISTRO reg){
     }
 
     fseek(dados, cab.topo, SEEK_SET);
-    atual = le_registro_bin(dados);
+    atual = le_registro_bin(dados); //Neste ponto, 'atual' contém o primeiro registro da lista.
     byteOffset_atual = cab.topo;
     
     //Inserção no início da lista.
@@ -204,6 +137,7 @@ void insere_listaRemovidos(FILE *dados, long int byteOffset, REGISTRO reg){
     fseek(dados, atual.prox, SEEK_SET);
     proximo = le_registro_bin(dados);
 
+    //Percorre a lista até encontrar o local apropriado para a inserção do registro ou até o fim dela.
     while(proximo.prox != -1 && reg.tamanhoRegistro > proximo.tamanhoRegistro){
 
         libera_registro(atual);
@@ -243,13 +177,15 @@ void insere_listaRemovidos(FILE *dados, long int byteOffset, REGISTRO reg){
     libera_registro(proximo);
 }
 
+
+//Função auxiliar que realiza a comparação entre os campos buscados e os campos de um registro. Retorna 1 se o registro atende às buscas, e 0 caso contrário.
 int compara(REGISTRO reg, struct como_busca busca){
 
-    int camposIguais = 0;
+    int camposIguais = 0; //Variável que armazena quantos campos do registro são iguais aos campos buscados até o momento.
 
-    if(busca.busca_id == 1){
-        if(reg.id == busca.id)
-            camposIguais++;
+    if(busca.busca_id == 1){ //Verifica se a busca por 'id' deve ser feita.
+        if(reg.id == busca.id) //Se sim, realiza a comparação.
+            camposIguais++; //Se passar na busca, incrementa 'camposIguais'.
     }
 
     if(busca.busca_idade == 1){ //Verifica se a busca por 'idade' deve ser feita.
@@ -272,7 +208,7 @@ int compara(REGISTRO reg, struct como_busca busca){
             camposIguais++; //Se passar na busca, incrementa 'camposIguais'.
     }
 
-    if(camposIguais == busca.m){ //Se o registro atende a todas as buscas por campo feitas, então camposIguais == m.
+    if(camposIguais == busca.m){ //Se o registro atende a todas as buscas por campo feitas, então camposIguais == m (sendo m o número de campos que estão sendo usados na busca).
         return 1;
     }
 
@@ -281,18 +217,29 @@ int compara(REGISTRO reg, struct como_busca busca){
 
 
 //Funcionalidade 5: realiza a remoção de registros por qualquer campo.
-int funcao5(FILE *dados, FILE *arq_indice, int n){
+int funcao5(FILE *dados, char *nome_arq_indice, int n){
+
+    FILE *arq_indice = fopen(nome_arq_indice, "wb");
+    if(arq_indice == NULL)
+        return 0;
+
+    //Criação do arquivo de índice utilizando a funcionalidade 4.
+    if(funcao4(dados, arq_indice) == 0) //Verifica se a criação do índice foi bem sucedida.
+        return 0;
+
+    fclose(arq_indice);
+    arq_indice = fopen(nome_arq_indice, "rb");
+
+    rewind(dados);
     CABECALHO cab = le_cabecalho(dados);
 
-/* O status já está como 0 nos arquivos dados
-    if((cab.status)[0] == '0'){
-        return 0;
-    }
-*/
+
+    //O arquivo de dados será modificado, logo 'status' recebe o valor 0 e é escrito no arquivo.
     (cab.status)[0] = '0';
     rewind(dados);
     escreve_cabecalho(dados, cab);
 
+    //Carregamento do índice para a memória primária.
     REG_INDICE *indice = carrega_indice(arq_indice, cab.nroRegArq);
     if(indice == NULL)
         return 0;
@@ -357,41 +304,48 @@ int funcao5(FILE *dados, FILE *arq_indice, int n){
         }
     }
 
-    long int byteOffset;
+
+    long int byteOffset; //Variável que armazenará o byte offset do registro lido no momento.
 
     for(int i = 0; i < n; i++){ //Loop para as n buscas.
 
-        byteOffset = 25;
+        byteOffset = 25; //O byte offset do primeiro registro de dados é 25, logo após o registro de cabeçalho.
 
-        if((buscas[i]).busca_id == 1){
+        if((buscas[i]).busca_id == 1){ //Verifica se a busca por 'id' deve ser feita.
 
-            byteOffset = busca_id_indice(indice, cab.nroRegArq, (buscas[i]).id);
+            byteOffset = busca_id_indice(indice, cab.nroRegArq, (buscas[i]).id); //Realiza a busca do id no índice.
 
-            if(byteOffset == -1){
-                fseek(dados, 25, SEEK_SET);
-                continue;
+            if(byteOffset == -1){ //Verifica se o id buscado foi encontrado no índice.
+                //Se não foi encontrado, esta busca não foi bem sucedida e pode-se passar para a próxima.
+                fseek(dados, 25, SEEK_SET); //Posiciona o cursor no primeiro registro de dados, preparando para a próxima busca.
+                continue; //Passa para a próxima busca.
             }
 
+            //Se o id foi encontrado, lê o registro correspondente.
             fseek(dados, byteOffset, SEEK_SET);
             reg = le_registro_bin(dados);
 
-            if(compara(reg, buscas[i])){ //Se o registro atende a todas as buscas por campo feitas, então camposIguais == m.
+            //Realiza a comparação dos campos buscados com os campos do registro encontrado.
+            if(compara(reg, buscas[i])){ //Se o registro atende a todas as buscas por campo feitas, então 'compara' retorna 1. Nesse caso, o registro deve ser removido.
 
+                //Altera o campo 'removido' para 1 e o insere na lista de removidos (o registro com as alterações nos campos 'removido' e 'prox' são escritos no arquivo pela função 'insere_listaRemovidos').
                 (reg.removido)[0] = '1';
-
                 insere_listaRemovidos(dados, byteOffset, reg);
 
+                //Reflete a remoção no índice.
                 remove_registro_indice(indice, cab.nroRegArq, reg.id);
 
                 cab.nroRegArq--;
                 cab.nroRegRem++;
             }
 
+            //Liberação da memória alocada para o registro lido.
             libera_registro(reg);
         }
-        else{
+        else{ //Caso em que o id não é usado na busca.
             for(int j = 0; j < cab.nroRegArq + cab.nroRegRem; j++){ //Loop para percorrer o arquivo binário inteiro.
 
+                //Lê um registro do arquivo de dados.
                 reg = le_registro_bin(dados); 
 
                 if((reg.removido)[0] == '1'){ //Se o registro estiver marcado como removido, pula-se este registro.
@@ -401,68 +355,79 @@ int funcao5(FILE *dados, FILE *arq_indice, int n){
                     continue;
                 }
 
-                if(compara(reg, buscas[i])){ //Se o registro atende a todas as buscas por campo feitas, então camposIguais == m.
+                if(compara(reg, buscas[i])){ //Se o registro atende a todas as buscas por campo feitas, então 'compara' retorna 1. Nesse caso, o registro deve ser removido.
 
+                    //Realiza a mudança nos campos 'removido' e 'prox', e o insere na lista de removidos.
                     (reg.removido)[0] = '1';
-
                     insere_listaRemovidos(dados, byteOffset, reg);
 
+                    //Reflete a remoção no índice.
                     remove_registro_indice(indice, cab.nroRegArq, reg.id);
 
                     cab.nroRegArq--;
                     cab.nroRegRem++;
                 }
 
+                //Atualiza 'byteOffset' para o byte offset do próximo registro a ser lido.
                 byteOffset += (long int) reg.tamanhoRegistro;
                 
+                //Liberação da memória alocada para o registro.
                 libera_registro(reg);
 
                 fseek(dados, byteOffset, SEEK_SET);
             }
         }
-
+        //Volta ao primeiro registro de dados, preparando para a próxima busca.
         fseek(dados, 25, SEEK_SET);
     }
 
+    //As mudanças no arquivo de dados acabaram, logo 'status' recebe 1 e o registro de cabeçalho com as mudanças é escrito no arquivo.
     rewind(dados);
     (cab.status)[0] = '1';
     fwrite(cab.status, 1, 1, dados);
 
+    //Processo de reescrita do arquivo de índice.
 
-    FILE *novo_indice = fopen("novoindice.bin", "wb");
-    if(novo_indice == NULL)
+    //O arquivo é fechado e aberto em modo de escrita. Dessa forma, o conteúdo anterior é apagado. Como o tamanho do novo arquivo de índice é menor ou igual ao anterior, garante-se que não fiquem
+    //dados antigos no fim do arquivo.
+    fclose(arq_indice);
+    arq_indice = fopen(nome_arq_indice, "wb");
+    
+    if(arq_indice == NULL)
         return 0;
 
+    reescrita_indice(arq_indice, indice, cab.nroRegArq);
 
-    rewind(arq_indice);
-
+    //As mudanças no índice acabaram, logo 'status' recebe 1.
     char status[1];
     status[0] = '1';
-    fwrite(status, 1, 1, novo_indice);
+    rewind(arq_indice);
+    fwrite(status, 1, 1, arq_indice);
 
-    for(int i = 0; i < cab.nroRegArq; i++)
-        escreve_registro_indice(novo_indice, indice[i]);
+    fclose(arq_indice);
 
+    //Liberação da memória alocada para o índice.
     free(indice);
-
-    fclose(novo_indice);
-    //binarioNaTela("novoindice.bin");
 
     return 1;
 }
 
+//Função que lê a entrada e retorna um vetor com as structs que contêm os registros a serem inseridos.
 REGISTRO* le_entrada_funcao6(int n){
-    REGISTRO *registros = malloc(n*sizeof(REGISTRO));
+    REGISTRO *registros = malloc(n*sizeof(REGISTRO)); //Vetor de registros a serem inseridos.
     
     if(registros == NULL)
         return NULL;
 
     char valorCampo[100];
     for(int i = 0; i < n; i++){
+
+        //Inicialização padrão de alguns campos.
         ((registros[i]).removido)[0] = '0';
         (registros[i]).tamanhoRegistro = 33;
         (registros[i]).prox = -1;
 
+        //Leitura dos valores dos campos, com tratamento de campos nulos.
         scanf(" %s", valorCampo);
         if(strcmp(valorCampo, "NULO") == 0)
             (registros[i]).id = -1;
@@ -475,7 +440,7 @@ REGISTRO* le_entrada_funcao6(int n){
         else
             (registros[i]).idade = atoi(valorCampo);
 
-        scan_quote_string(valorCampo);
+        scan_quote_string(valorCampo);// leitura sem aspas das entradas.
         (registros[i]).tamNomeJogador = strlen(valorCampo);
         (registros[i]).nomeJogador = (char *) malloc((registros[i]).tamNomeJogador*sizeof(char) + 1);
 
@@ -492,15 +457,7 @@ REGISTRO* le_entrada_funcao6(int n){
             return NULL;
 
         strcpy((registros[i]).Nacionalidade, valorCampo);
-/*
-        if(strcmp(valorCampo, "") == 0)
-            (registros[i]).tamNacionalidade = 0;
-        else{
-            (registros[i]).tamNacionalidade = strlen(valorCampo);
-            (registros[i]).Nacionalidade = (char *) malloc((registros[i]).tamNacionalidade*sizeof(char) + 1);
 
-        }
-*/
         scan_quote_string(valorCampo);
         (registros[i]).tamNomeClube = strlen(valorCampo);
         (registros[i]).nomeClube = (char *) malloc((registros[i]).tamNomeClube*sizeof(char) + 1);
@@ -517,55 +474,49 @@ REGISTRO* le_entrada_funcao6(int n){
 }
 
 
-void insere_indice(FILE *arq_indice, REG_INDICE *indice, int tamIndice, REG_INDICE *insercoes, int tamInsercoes){
-    ordena_id(insercoes, 0, tamInsercoes - 1);
-    
-    fseek(arq_indice, 1, SEEK_SET);
-
-    int i = 0, j = 0;
-
-    while(j < tamIndice){
-        if(i < tamInsercoes && (insercoes[i]).id <= (indice[j]).id){
-            escreve_registro_indice(arq_indice, insercoes[i]);
-            i++;
-        }
-        else{
-            escreve_registro_indice(arq_indice, indice[j]);
-            j++;
-        }
-    }
-
-    for(; i < tamInsercoes; i++)
-        escreve_registro_indice(arq_indice, insercoes[i]);
-}
-
-
 //Funcionalidade 6: inserção de novos registros com reaproveitamento de espaço, utilizando a estratégia Best Fit.
-int funcao6(FILE *dados, FILE *arq_indice, int nroInsercoes){
+int funcao6(FILE *dados, char *nome_arq_indice, int nroInsercoes){
+    
+    FILE *arq_indice = fopen(nome_arq_indice, "wb");
+
+    //Criação do arquivo de índice utilizando a funcionalidade 4.
+    if(funcao4(dados, arq_indice) == 0) //Verifica se a criação do índice foi bem sucedida.
+        return 0;
+
+    fclose(arq_indice);
+    arq_indice = fopen(nome_arq_indice, "rb+");
+
+    rewind(dados);
 	CABECALHO cab = le_cabecalho(dados);
+
     char status_indice[1];
+    rewind(arq_indice);
     fread(status_indice, 1, 1, arq_indice);
 
+    //Verificação da consistência dos dados dos arquivos.
 	if((cab.status)[0] == '0' || status_indice[0] == '0')
 		return 0;
 
     status_indice[0] = '0';
     (cab.status)[0] = '0';
 
+    //Os arquivos de dados e de índice sofrerão alterações. Logo, 'status' recebe 0 durante a execução da funcionalidade.
     rewind(dados);
     escreve_cabecalho(dados, cab);
     rewind(arq_indice);
     fwrite(status_indice, 1, 1, arq_indice);
 
+    //Carregamento do índice para a memória primária.
     REG_INDICE *indice = carrega_indice(arq_indice, cab.nroRegArq);
 
+    //Leitura da entrada.
     REGISTRO *insercoes = le_entrada_funcao6(nroInsercoes);
 
     if(insercoes == NULL || indice == NULL)
         return 0;
 
-    //ordena_insercoes(insercoes, 0, nroInsercoes - 1);
 
+    //Vetor que armazenará os registros a serem inseridos no índice.
     REG_INDICE *insercoes_indice = (REG_INDICE *) malloc(nroInsercoes*sizeof(REG_INDICE));
     if(insercoes_indice == NULL)
         return 0;
@@ -574,37 +525,39 @@ int funcao6(FILE *dados, FILE *arq_indice, int nroInsercoes){
     REGISTRO removidoAtual, removidoAnterior;
     int i = 0;
     char lixo = '$';
-    int tamanho_lixo;
+    int tamanho_lixo; //Variável que contém o número de bytes no fim do registro inserido que deve receber o caractere '$'.
     
     byteOffset_atual = cab.topo;
 
-    for(i = 0; i < nroInsercoes; i++){
+    for(i = 0; i < nroInsercoes; i++){ //Loop para as n inserções.
         byteOffset_atual = cab.topo;
 
-        (insercoes_indice[i]).id = (insercoes[i]).id;
+        (insercoes_indice[i]).id = (insercoes[i]).id; //Montagem do vetor de registros para inserção no índice.
         
-        while(byteOffset_atual != -1){
+        while(byteOffset_atual != -1){ //Loop para percorrer a lista de removidos, procurando o lugar apropriado para inserir o novo registro.
 
             fseek(dados, byteOffset_atual, SEEK_SET);
             removidoAtual = le_registro_bin(dados);
 
-            if((insercoes[i]).tamanhoRegistro <= removidoAtual.tamanhoRegistro){
+            if((insercoes[i]).tamanhoRegistro <= removidoAtual.tamanhoRegistro){ //Testa se o novo registro cabe no registro atual da lista de removidos.
+                //Se couber, escreve-o sobre o registro removido.
+
                 (insercoes_indice[i]).byteOffset = byteOffset_atual;
 
-                tamanho_lixo = removidoAtual.tamanhoRegistro - (insercoes[i]).tamanhoRegistro;
+                tamanho_lixo = removidoAtual.tamanhoRegistro - (insercoes[i]).tamanhoRegistro; //Calcula o número de '$' a ser acrescentado ao final do registro inserido.
 
 
                 (insercoes[i]).tamanhoRegistro = removidoAtual.tamanhoRegistro;
 
                 fseek(dados, byteOffset_atual, SEEK_SET);
                 escreve_registro(dados, insercoes[i]);
-                for(int i = 0; i < tamanho_lixo; i++)
+                for(int i = 0; i < tamanho_lixo; i++) //Preenche o registro com '$'
                     fwrite(&lixo, 1, 1, dados);
 
-                if(cab.topo == byteOffset_atual){
+                if(cab.topo == byteOffset_atual){ //Testa se o registro que foi sobrescrito era o primeiro da lista. Se for, 'topo' do cabeçalho deve ser atualizado.
                     cab.topo = removidoAtual.prox;
                 }
-                else{
+                else{ //Atualiza o campo 'prox' do registro imediatamente anterior ao registro sobrescrito na lista de removidos.
                     removidoAnterior.prox = removidoAtual.prox;
 
                     fseek(dados, byteOffset_anterior, SEEK_SET);
@@ -620,9 +573,10 @@ int funcao6(FILE *dados, FILE *arq_indice, int nroInsercoes){
                 break;
             }
 
-            if(byteOffset_atual != cab.topo)
+            if(byteOffset_atual != cab.topo) //Testa se 'byteOffset_atual' não é o byte offset do primeiro registro da lista. Se não for, 'removidoAnterior' contém memória alocada que precisa ser liberada.
                 libera_registro(removidoAnterior);
 
+            //"Avança" 'removidoAnterior' para 'removidoAtual', preparando para ler o próximo registro do arquivo.
             removidoAnterior = removidoAtual;
 
             byteOffset_anterior = byteOffset_atual;
@@ -630,6 +584,7 @@ int funcao6(FILE *dados, FILE *arq_indice, int nroInsercoes){
 
         }
 
+        //Inserção no final do arquivo.
         if(byteOffset_atual == -1){
             byteOffset_atual = cab.proxByteOffset;
             
@@ -645,46 +600,8 @@ int funcao6(FILE *dados, FILE *arq_indice, int nroInsercoes){
         libera_registro(insercoes[i]);
     }
 
-/*
-    for(; i < nroInsercoes && j < tamanhoLista; j++){
-        fseek(dados, byteOffset, SEEK_SET);
-        removidoAtual = le_registro_bin(dados);
-
-        if((insercoes[i]).tamanhoRegistro <= removidoAtual.tamanhoRegistro){
-            (insercoes_indice[i]).id = (insercoes[i]).id;
-            (insercoes_indice[i]).byteOffset = byteOffset;
-
-            fseek(dados, byteOffset, SEEK_SET);
-            escreve_registro(dados, insercoes[i]);
-            fwrite(&lixo, 1, removidoAtual.tamanhoRegistro - (insercoes[i]).tamanhoRegistro, dados);
-            i++;
-
-            if(cab.topo == byteOffset){
-                cab.topo = removidoAtual.prox;
-            }
-
-            cab.nroRegRem--;
-        }
-
-        byteOffset = removidoAtual.prox;
-        libera_registro(removidoAtual);
-    }
-
-    if(i < nroInsercoes){
-        byteOffset = cab.proxByteOffset;
-        fseek(dados, byteOffset, SEEK_SET);
-
-        for(; i < nroInsercoes; i++){
-            escreve_registro(dados, insercoes[i]);
-            (insercoes_indice[i]).id = (insercoes[i]).id;
-            (insercoes_indice[i]).byteOffset = byteOffset;
-            byteOffset += (insercoes[i]).tamanhoRegistro;
-        }
-
-        cab.proxByteOffset = byteOffset;
-    }
-*/
-    insere_indice(arq_indice, indice, cab.nroRegArq, insercoes_indice, nroInsercoes);
+    //Atualiza o arquivo de índice, inserindo os novos registros.
+    insere_registros_indice(arq_indice, indice, cab.nroRegArq, insercoes_indice, nroInsercoes);
 
     cab.nroRegArq += nroInsercoes;
 
@@ -699,6 +616,8 @@ int funcao6(FILE *dados, FILE *arq_indice, int nroInsercoes){
     free(indice);
     free(insercoes);
     free(insercoes_indice);
+
+    fclose(arq_indice);
 
     return 1;
 }
