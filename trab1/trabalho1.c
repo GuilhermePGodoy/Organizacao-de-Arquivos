@@ -1,3 +1,10 @@
+/*
+Trabalho prático 1 da disciplina  SCC0215 - Organização de Arquivos.
+Desenvolvido por:
+    Guilherme Pascoale Godoy - nUSP: 14576277
+    Guilherme Antonio Costa Bandeira - nUSP: 14575620
+*/
+
 #include "registros.h"
 #include "funcionalidades.h"
 
