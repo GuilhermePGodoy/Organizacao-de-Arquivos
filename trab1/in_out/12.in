@@ -1,0 +1,5 @@
+5 binario12.bin indice12.bin 4
+2 idade 22 nacionalidade "NACIONALIDADE INEXISTENTE"
+3 idade 24 nacionalidade "SPAIN" nomeClube "REAL MADRID CF"
+1 nacionalidade "ARGENTINA"
+4 idade 25 nomeJogador "T. BASIC" nacionalidade "CROATIA" nomeClube "LAZIO"
